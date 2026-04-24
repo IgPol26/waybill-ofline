@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <title>Путевой лист — офлайн версия</title>
+    
+    <!-- PWA Metas -->
+    <meta name="theme-color" content="#1f6392">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Путевой лист">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231f6392'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white'%3E📋%3C/text%3E%3C/svg%3E">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            background: #ecf2f8;
+            margin: 0;
+            padding: 16px;
+            color: #1a2c3c;
+        }
+
+        .app-container {
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .install-button-top {
+            background: linear-gradient(135deg, #1f6392 0%, #0f4b6e 100%);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            padding: 14px 24px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            width: 100%;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(31, 99, 146, 0.3);
+        }
+        .install-button-top:active {
+            transform: scale(0.97);
+        }
+        .install-button-top.installed {
+            background: #6c9ebd;
+            opacity: 0.7;
+            cursor: default;
+        }
+
+        .card {
+            background: white;
+            border-radius: 32px;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            font-size: 1.7rem;
+            font-weight: 620;
+            margin: 0 0 4px 0;
+            color: #0f2b3f;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sub {
+            color: #5b6f7e;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            border-left: 3px solid #2c7da0;
+            padding-left: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 530;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            color: #2c3f4f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label .req {
+            color: #c0392b;
+            font-size: 0.7rem;
+            font-weight: normal;
+        }
+
+        input {
+            padding: 14px 16px;
+            font-size: 1rem;
+            border: 1.5px solid #dfe8f0;
+            border-radius: 26px;
+            background: #ffffff;
+            transition: 0.2s;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.2);
+        }
+
+        .row-2cols {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .row-2cols .form-group {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .info-badge {
+            background: #eef3fc;
+            border-radius: 24px;
+            padding: 12px 16px;
+            font-size: 0.75rem;
+            color: #2c5a74;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .result-compact {
+            background: #eef3fa;
+            border-radius: 28px;
+            padding: 12px 18px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .result-compact span {
+            font-weight: 600;
+            color: #0e4b6e;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 18px 0 8px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            background: #1f6392;
+            border: none;
+            padding: 14px 0;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 44px;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        button:active { transform: scale(0.97); }
+        .btn-primary { background: #1f6392; }
+        .btn-primary:active { background: #0f4b6e; }
+        .btn-clear { background: #8b8c8f; }
+        .btn-clear:active { background: #6c6d70; }
+
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .offline-badge {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #e67e22;
+            color: white;
+            text-align: center;
+            padding: 5px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transform: translateY(-100%);
+            transition: transform 0.3s;
+            z-index: 1001;
+        }
+        
+        .offline-badge.show {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 500px) {
+            body { padding: 12px; }
+            .card { padding: 16px; }
+            .install-button-top {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="offlineBadge" class="offline-badge">📡 Работа офлайн</div>
+<div class="app-container">
+    <button id="installAppBtn" class="install-button-top">
+        📱 Установить приложение на телефон
+    </button>
+
+    <div class="card">
+        <h1>📋 Путевой лист</h1>
+        <div class="sub">Работает офлайн • Данные сохраняются • Округление до целых</div>
+
+        <div class="form-group">
+            <label>1. ⛽ Расход топлива на 100 км (л) <span class="req">обязательно</span></label>
+            <input type="number" id="fuelPer100" step="0.1" placeholder="Например: 12.5">
+        </div>
+
+        <div class="row-2cols">
+            <div class="form-group">
+                <label>2. 📟 Спидометр при выезде (км) <span class="req">обязательно</span></label>
+                <input type="number" id="odoStart" step="1" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>3. 🛢️ Остаток топлива при выезде (л) <span class="req">обязательно</span></label>
+                <input type="number" id="fuelStart" step="0.5" placeholder="0">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>4. ⛽➕ Заправка топлива (л)</label>
+            <input type="number" id="fuelRefill" step="0.5" placeholder="Добавлено литров" value="0">
+        </div>
+
+        <!-- <div class="info-badge">
+            ✏️ <strong>Поля 5, 6, 7, 8 можно вводить в любом порядке</strong><br>
+           📐 5 = 6 − 2 &nbsp;|&nbsp; 6 = 2 + 5 &nbsp;|&nbsp; 7 = 5 × (1 ÷ 100) &nbsp;|&nbsp; 8 = 3 + 4 − 7<br>
+            🔄 При вводе любого из них остальные три пересчитываются автоматически<br>
+            🗑️ <strong>Если очистить любое из полей 5-8 — все четыре поля очистятся</strong><br>
+            🎯 <strong>Округление:</strong> до целых (0.5 и выше → вверх)<br>
+            📶 <strong>Работает без интернета</strong> — после установки приложения
+        </div> -->
+
+        <div class="row-2cols">
+            <div class="form-group">
+                <label>5. 📊 Пробег за день (км)</label>
+                <input type="number" id="dailyDist" step="1" placeholder="Целое число">
+            </div>
+            <div class="form-group">
+                <label>6. 🔁 Спидометр при возвращении (км)</label>
+                <input type="number" id="odoEnd" step="1" placeholder="Целое число">
+            </div>
+        </div>
+
+        <div class="row-2cols">
+            <div class="form-group">
+                <label>7. 💧 Расход топлива за день (л)</label>
+                <input type="number" id="fuelUsedDay" step="1" placeholder="Целое число">
+            </div>
+            <div class="form-group">
+                <label>8. 🛢️ Остаток топлива при возвращении (л)</label>
+                <input type="number" id="fuelEnd" step="1" placeholder="Целое число">
+            </div>
+        </div>
+
+        <div class="result-compact" id="liveSummary">
+            <span>📐 Пробег: — км</span>
+            <span>💧 Расход за день: — л</span>
+            <span>🛢️ Остаток при возвращении: — л</span>
+        </div>
+
+        <div class="button-group">
+            <button id="nextSheetBtn" class="btn-primary">➡️ Перенести в следующий лист</button>
+            <button id="clearAllBtn" class="btn-clear">🧹 Очистить всё</button>
+        </div>
+    </div>
+    <div class="card" style="background: #fafeff;">
+        <div style="font-weight: 500; font-size: 0.8rem;">📌 Особенности офлайн-режима</div>
+        <div style="font-size: 0.73rem; color: #2c5a74; margin-top: 8px;">
+            • <strong>Работает без интернета</strong> — после первого посещения сайт сохраняется в памяти телефона.<br>
+            • <strong>Установите приложение</strong> через кнопку сверху для удобного доступа с рабочего стола.<br>
+            • Все данные сохраняются <strong>навсегда</strong> в вашем телефоне, даже после перезагрузки.<br>
+            • При отсутствии интернета вы увидите оранжевую плашку — это нормально, приложение продолжает работать.
+        </div>
+    </div>
+</div>
+<div id="saveIndicator" class="save-indicator">✓ Сохранено</div>
+
+<script>
+    // ========== ФУНКЦИЯ ОКРУГЛЕНИЯ ==========
+    function roundHalfUp(value) {
+        if (value === null || isNaN(value)) return null;
+        return Math.round(value);
+    }
+
+    // ========== ДОМ ЭЛЕМЕНТЫ ==========
+    const fuelPer100Input = document.getElementById('fuelPer100');
+    const odoStartInput = document.getElementById('odoStart');
+    const fuelStartInput = document.getElementById('fuelStart');
+    const fuelRefillInput = document.getElementById('fuelRefill');
+    const dailyDistInput = document.getElementById('dailyDist');
+    const odoEndInput = document.getElementById('odoEnd');
+    const fuelUsedDayInput = document.getElementById('fuelUsedDay');
+    const fuelEndInput = document.getElementById('fuelEnd');
+    const liveSummary = document.getElementById('liveSummary');
+    const saveIndicator = document.getElementById('saveIndicator');
+    const offlineBadge = document.getElementById('offlineBadge');
+
+    let isUpdating = false;
+    let saveTimeout = null;
+
+    // ========== ОТСЛЕЖИВАНИЕ ОФЛАЙН-СТАТУСА ==========
+    function updateOnlineStatus() {
+        if (!navigator.onLine) {
+            offlineBadge.classList.add('show');
+        } else {
+            offlineBadge.classList.remove('show');
+        }
+    }
+    
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+
+    // ========== ФУНКЦИИ СОХРАНЕНИЯ ==========
+    function saveAllData() {
+        const data = {
+            fuelPer100: fuelPer100Input.value,
+            odoStart: odoStartInput.value,
+            fuelStart: fuelStartInput.value,
+            fuelRefill: fuelRefillInput.value,
+            dailyDist: dailyDistInput.value,
+            odoEnd: odoEndInput.value,
+            fuelUsedDay: fuelUsedDayInput.value,
+            fuelEnd: fuelEndInput.value,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('waybillData', JSON.stringify(data));
+        
+        if (saveIndicator) {
+            saveIndicator.style.opacity = '1';
+            if (saveTimeout) clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                saveIndicator.style.opacity = '0';
+            }, 1000);
+        }
+    }
+
+    function loadSavedData() {
+        const saved = localStorage.getItem('waybillData');
+        if (!saved) return false;
+        
+        try {
+            const data = JSON.parse(saved);
+            if (data.fuelPer100 !== undefined) fuelPer100Input.value = data.fuelPer100;
+            if (data.odoStart !== undefined) odoStartInput.value = data.odoStart;
+            if (data.fuelStart !== undefined) fuelStartInput.value = data.fuelStart;
+            if (data.fuelRefill !== undefined) fuelRefillInput.value = data.fuelRefill;
+            if (data.dailyDist !== undefined) dailyDistInput.value = data.dailyDist;
+            if (data.odoEnd !== undefined) odoEndInput.value = data.odoEnd;
+            if (data.fuelUsedDay !== undefined) fuelUsedDayInput.value = data.fuelUsedDay;
+            if (data.fuelEnd !== undefined) fuelEndInput.value = data.fuelEnd;
+            return true;
+        } catch (e) {
+            console.error('Ошибка загрузки:', e);
+            return false;
+        }
+    }
+
+    function autoSave() {
+        if (isUpdating) return;
+        saveAllData();
+    }
+
+    // ========== ОЧИСТКА ВСЕЙ ГРУППЫ 5-8 ==========
+    function clearGroup568() {
+        isUpdating = true;
+        dailyDistInput.value = '';
+        odoEndInput.value = '';
+        fuelUsedDayInput.value = '';
+        fuelEndInput.value = '';
+        isUpdating = false;
+        updateSummary();
+        autoSave();
+    }
+
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    function getFuelPer100() { const v = parseFloat(fuelPer100Input.value); return (isNaN(v) || v <= 0) ? null : v; }
+    function getOdoStart() { const v = parseFloat(odoStartInput.value); return isNaN(v) ? null : v; }
+    function getFuelStart() { const v = parseFloat(fuelStartInput.value); return isNaN(v) ? null : v; }
+    function getFuelRefill() { const v = parseFloat(fuelRefillInput.value); return isNaN(v) ? 0 : v; }
+    function getDailyDist() { const v = parseFloat(dailyDistInput.value); return isNaN(v) ? null : v; }
+    function getOdoEnd() { const v = parseFloat(odoEndInput.value); return isNaN(v) ? null : v; }
+    function getFuelUsedDay() { const v = parseFloat(fuelUsedDayInput.value); return isNaN(v) ? null : v; }
+    function getFuelEnd() { const v = parseFloat(fuelEndInput.value); return isNaN(v) ? null : v; }
+
+    function calcFuelUsedFromDistance(distance, fuelPer100) {
+        if (distance === null || fuelPer100 === null) return null;
+        return distance * (fuelPer100 / 100);
+    }
+    
+    function calcDistanceFromFuelUsed(fuelUsed, fuelPer100) {
+        if (fuelUsed === null || fuelPer100 === null || fuelPer100 <= 0) return null;
+        return fuelUsed / (fuelPer100 / 100);
+    }
+    
+    function calcFuelEndValue(fuelStart, fuelRefill, fuelUsed) {
+        if (fuelStart === null || fuelUsed === null) return null;
+        let val = fuelStart + fuelRefill - fuelUsed;
+        return val < 0 ? 0 : val;
+    }
+    
+    function calcFuelUsedFromFuelEndValue(fuelStart, fuelRefill, fuelEnd) {
+        if (fuelStart === null || fuelEnd === null) return null;
+        let used = fuelStart + fuelRefill - fuelEnd;
+        return used < 0 ? 0 : used;
+    }
+
+    function updateSummary() {
+        const dist = getDailyDist();
+        const used = getFuelUsedDay();
+        const end = getFuelEnd();
+        liveSummary.innerHTML = `<span>📐 Пробег: ${dist !== null ? roundHalfUp(dist) : '—'} км</span>
+                                  <span>💧 Расход за день: ${used !== null ? roundHalfUp(used) : '—'} л</span>
+                                  <span>🛢️ Остаток при возвращении: ${end !== null ? roundHalfUp(end) : '—'} л</span>`;
+    }
+
+    // Основная функция синхронизации
+    function syncFromChangedField(changedField) {
+        if (isUpdating) return;
+
+        const fuelPer100 = getFuelPer100();
+        const odoStart = getOdoStart();
+        const fuelStart = getFuelStart();
+        const fuelRefill = getFuelRefill();
+
+        if (fuelPer100 === null || odoStart === null || fuelStart === null) {
+            updateSummary();
+            autoSave();
+            return;
+        }
+
+        let daily = getDailyDist();
+        let odoEnd = getOdoEnd();
+        let fuelUsed = getFuelUsedDay();
+        let fuelEnd = getFuelEnd();
+
+        switch (changedField) {
+            case 'dailyDist':
+                if (daily !== null) {
+                    odoEnd = odoStart + daily;
+                    fuelUsed = calcFuelUsedFromDistance(daily, fuelPer100);
+                    if (fuelUsed !== null) fuelEnd = calcFuelEndValue(fuelStart, fuelRefill, fuelUsed);
+                }
+                break;
+            case 'odoEnd':
+                if (odoEnd !== null) {
+                    daily = Math.max(0, odoEnd - odoStart);
+                    fuelUsed = calcFuelUsedFromDistance(daily, fuelPer100);
+                    if (fuelUsed !== null) fuelEnd = calcFuelEndValue(fuelStart, fuelRefill, fuelUsed);
+                }
+                break;
+            case 'fuelUsedDay':
+                if (fuelUsed !== null) {
+                    daily = calcDistanceFromFuelUsed(fuelUsed, fuelPer100);
+                    if (daily !== null && daily < 0) daily = 0;
+                    if (daily !== null) odoEnd = odoStart + daily;
+                    fuelEnd = calcFuelEndValue(fuelStart, fuelRefill, fuelUsed);
+                }
+                break;
+            case 'fuelEnd':
+                if (fuelEnd !== null) {
+                    fuelUsed = calcFuelUsedFromFuelEndValue(fuelStart, fuelRefill, fuelEnd);
+                    if (fuelUsed !== null) {
+                        daily = calcDistanceFromFuelUsed(fuelUsed, fuelPer100);
+                        if (daily !== null && daily < 0) daily = 0;
+                        if (daily !== null) odoEnd = odoStart + daily;
+                    }
+                }
+                break;
+            default: return;
+        }
+
+        if (daily !== null && daily < 0) daily = 0;
+        if (odoEnd !== null && odoEnd < 0) odoEnd = 0;
+        if (fuelUsed !== null && fuelUsed < 0) fuelUsed = 0;
+        if (fuelEnd !== null && fuelEnd < 0) fuelEnd = 0;
+
+        isUpdating = true;
+        
+        if (daily !== null && changedField !== 'dailyDist') {
+            const roundedDaily = roundHalfUp(daily);
+            if (dailyDistInput.value !== roundedDaily.toString()) {
+                dailyDistInput.value = roundedDaily;
+            }
+        }
+        if (odoEnd !== null && changedField !== 'odoEnd') {
+            const roundedOdoEnd = roundHalfUp(odoEnd);
+            if (odoEndInput.value !== roundedOdoEnd.toString()) {
+                odoEndInput.value = roundedOdoEnd;
+            }
+        }
+        if (fuelUsed !== null && changedField !== 'fuelUsedDay') {
+            const roundedFuelUsed = roundHalfUp(fuelUsed);
+            if (fuelUsedDayInput.value !== roundedFuelUsed.toString()) {
+                fuelUsedDayInput.value = roundedFuelUsed;
+            }
+        }
+        if (fuelEnd !== null && changedField !== 'fuelEnd') {
+            const roundedFuelEnd = roundHalfUp(fuelEnd);
+            if (fuelEndInput.value !== roundedFuelEnd.toString()) {
+                fuelEndInput.value = roundedFuelEnd;
+            }
+        }
+        
+        isUpdating = false;
+        updateSummary();
+        autoSave();
+    }
+
+    function createHandler(fieldName) {
+        return function(e) {
+            if (isUpdating) return;
+            
+            const value = e.target.value;
+            const isEmpty = value === null || value === '' || (typeof value === 'string' && value.trim() === '');
+            
+            if (isEmpty) {
+                clearGroup568();
+                return;
+            }
+            
+            const fuelPer100 = getFuelPer100();
+            const odoStart = getOdoStart();
+            const fuelStart = getFuelStart();
+            if (fuelPer100 === null || odoStart === null || fuelStart === null) {
+                updateSummary();
+                autoSave();
+                return;
+            }
+            syncFromChangedField(fieldName);
+        };
+    }
+
+    function onBaseFieldChange() {
+        if (isUpdating) return;
+        const fuelPer100 = getFuelPer100();
+        const odoStart = getOdoStart();
+        const fuelStart = getFuelStart();
+        if (fuelPer100 === null || odoStart === null || fuelStart === null) {
+            updateSummary();
+            autoSave();
+            return;
+        }
+        const daily = getDailyDist();
+        const odoEnd = getOdoEnd();
+        const fuelUsed = getFuelUsedDay();
+        const fuelEnd = getFuelEnd();
+        if (daily !== null) syncFromChangedField('dailyDist');
+        else if (odoEnd !== null) syncFromChangedField('odoEnd');
+        else if (fuelUsed !== null) syncFromChangedField('fuelUsedDay');
+        else if (fuelEnd !== null) syncFromChangedField('fuelEnd');
+        else {
+            updateSummary();
+            autoSave();
+        }
+    }
+
+    function transferToNextSheet() {
+        const fuelPer100 = getFuelPer100();
+        const odoStart = getOdoStart();
+        const fuelStart = getFuelStart();
+        
+        if (fuelPer100 === null || odoStart === null || fuelStart === null) {
+            alert("⚠️ Обязательные поля 1, 2, 3 должны быть заполнены перед переносом.");
+            return;
+        }
+
+        let currentOdoEnd = getOdoEnd();
+        let currentFuelEnd = getFuelEnd();
+        let currentDaily = getDailyDist();
+        let currentFuelUsed = getFuelUsedDay();
+
+        if (currentOdoEnd === null && currentDaily !== null) {
+            currentOdoEnd = odoStart + currentDaily;
+        }
+        if (currentFuelEnd === null && currentFuelUsed !== null && fuelStart !== null) {
+            currentFuelEnd = fuelStart + getFuelRefill() - currentFuelUsed;
+        }
+        if (currentFuelEnd === null && currentDaily !== null && fuelPer100 !== null) {
+            const used = calcFuelUsedFromDistance(currentDaily, fuelPer100);
+            if (used !== null) currentFuelEnd = calcFuelEndValue(fuelStart, getFuelRefill(), used);
+        }
+
+        if (currentOdoEnd === null || isNaN(currentOdoEnd)) {
+            alert("Не удалось определить спидометр возврата. Введите пробег (п.5) или спидометр возврата (п.6).");
+            return;
+        }
+        if (currentFuelEnd === null || isNaN(currentFuelEnd)) {
+            alert("Не удалось определить остаток топлива при возвращении. Введите расход (п.7) или остаток возврата (п.8).");
+            return;
+        }
+        if (currentFuelEnd < 0) currentFuelEnd = 0;
+
+        const roundedOdoEnd = roundHalfUp(currentOdoEnd);
+        const roundedFuelEnd = roundHalfUp(currentFuelEnd);
+
+        isUpdating = true;
+        odoStartInput.value = roundedOdoEnd;
+        fuelStartInput.value = roundedFuelEnd;
+        fuelRefillInput.value = "0";
+        clearGroup568();
+        isUpdating = false;
+        updateSummary();
+        autoSave();
+        alert(`✅ Перенос выполнен.\nНовый путевой лист:\nСпидометр выезда = ${roundedOdoEnd} км\nОстаток выезда = ${roundedFuelEnd} л\nЗаправка = 0 л`);
+    }
+
+    function fullReset() {
+        if (confirm("Очистить все данные? Сохранённые данные будут удалены без возможности восстановления.")) {
+            isUpdating = true;
+            fuelPer100Input.value = "";
+            odoStartInput.value = "";
+            fuelStartInput.value = "";
+            fuelRefillInput.value = "0";
+            dailyDistInput.value = "";
+            odoEndInput.value = "";
+            fuelUsedDayInput.value = "";
+            fuelEndInput.value = "";
+            isUpdating = false;
+            updateSummary();
+            localStorage.removeItem('waybillData');
+            saveIndicator.style.opacity = '1';
+            saveIndicator.style.background = '#e74c3c';
+            saveIndicator.innerText = '✓ Очищено';
+            setTimeout(() => {
+                saveIndicator.style.opacity = '0';
+                setTimeout(() => {
+                    saveIndicator.style.background = '#2ecc71';
+                    saveIndicator.innerText = '✓ Сохранено';
+                }, 500);
+            }, 1500);
+        }
+    }
+
+    // ========== PWA УСТАНОВКА ==========
+    let deferredPrompt;
+    const installBtn = document.getElementById('installAppBtn');
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.style.display = 'flex';
+        installBtn.classList.remove('installed');
+        installBtn.innerHTML = '📱 Установить приложение на телефон';
+    });
+    
+    window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        installBtn.classList.add('installed');
+        installBtn.innerHTML = '✅ Приложение установлено';
+        setTimeout(() => {
+            installBtn.style.display = 'none';
+        }, 3000);
+    });
+    
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBtn.classList.add('installed');
+                installBtn.innerHTML = '✅ Приложение установлено';
+                setTimeout(() => {
+                    installBtn.style.display = 'none';
+                }, 2000);
+            }
+            deferredPrompt = null;
+        } else {
+            if ('standalone' in window.navigator && window.navigator.standalone === false) {
+                alert('Нажмите "Поделиться" → "На экран \"Домой\"" в Safari');
+            } else if (window.matchMedia('(display-mode: browser)').matches) {
+                alert('Нажмите на меню браузера (⋯) → "Установить приложение" или "Добавить на главный экран"');
+            } else {
+                alert('Ваш браузер поддерживает установку PWA. Нажмите на меню браузера и выберите "Установить приложение"');
+            }
+        }
+    });
+    
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        installBtn.style.display = 'none';
+    }
+
+    // ========== НАЗНАЧАЕМ ОБРАБОТЧИКИ ==========
+    dailyDistInput.addEventListener('input', createHandler('dailyDist'));
+    odoEndInput.addEventListener('input', createHandler('odoEnd'));
+    fuelUsedDayInput.addEventListener('input', createHandler('fuelUsedDay'));
+    fuelEndInput.addEventListener('input', createHandler('fuelEnd'));
+
+    fuelPer100Input.addEventListener('input', onBaseFieldChange);
+    odoStartInput.addEventListener('input', onBaseFieldChange);
+    fuelStartInput.addEventListener('input', onBaseFieldChange);
+    fuelRefillInput.addEventListener('input', onBaseFieldChange);
+
+    document.getElementById('nextSheetBtn').addEventListener('click', transferToNextSheet);
+    document.getElementById('clearAllBtn').addEventListener('click', fullReset);
+
+    // Загрузка сохранённых данных
+    if (loadSavedData()) {
+        setTimeout(() => {
+            onBaseFieldChange();
+        }, 10);
+    } else {
+        if (fuelRefillInput.value === '') fuelRefillInput.value = '0';
+        updateSummary();
+    }
+</script>
+
+<!-- Генерация манифеста PWA и Service Worker для офлайн-работы -->
+<script>
+    (function setupPWA() {
+        const manifest = {
+            name: "Путевой лист",
+            short_name: "Путевой лист",
+            description: "Расчёт путевых листов — работает офлайн",
+            start_url: "/",
+            display: "standalone",
+            theme_color: "#1f6392",
+            background_color: "#ecf2f8",
+            icons: [
+                { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231f6392'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white'%3E📋%3C/text%3E%3C/svg%3E", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }
+            ]
+        };
+        
+        const manifestBlob = new Blob([JSON.stringify(manifest)], {type: "application/json"});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        let manifestLink = document.querySelector('link[rel="manifest"]');
+        if (!manifestLink) {
+            manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            document.head.appendChild(manifestLink);
+        }
+        manifestLink.href = manifestURL;
+        
+        // Полноценный Service Worker для офлайн-работы
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'waybill-v6';
+                const urlsToCache = [
+                    '/',
+                    '/index.html'
+                ];
+                
+                self.addEventListener('install', event => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME).then(cache => {
+                            return cache.addAll(urlsToCache);
+                        })
+                    );
+                    self.skipWaiting();
+                });
+                
+                self.addEventListener('fetch', event => {
+                    event.respondWith(
+                        caches.match(event.request).then(response => {
+                            if (response) {
+                                return response;
+                            }
+                            return fetch(event.request).then(response => {
+                                if (!response || response.status !== 200 || response.type !== 'basic') {
+                                    return response;
+                                }
+                                const responseToCache = response.clone();
+                                caches.open(CACHE_NAME).then(cache => {
+                                    cache.put(event.request, responseToCache);
+                                });
+                                return response;
+                            });
+                        }).catch(() => {
+                            return new Response("Вы офлайн, но приложение работает!", {
+                                status: 200,
+                                headers: new Headers({ 'Content-Type': 'text/plain' })
+                            });
+                        })
+                    );
+                });
+                
+                self.addEventListener('activate', event => {
+                    event.waitUntil(
+                        caches.keys().then(cacheNames => {
+                            return Promise.all(
+                                cacheNames.map(cacheName => {
+                                    if (cacheName !== CACHE_NAME) {
+                                        return caches.delete(cacheName);
+                                    }
+                                })
+                            );
+                        })
+                    );
+                    self.clients.claim();
+                });
+            `;
+            const swBlob = new Blob([swCode], {type: 'application/javascript'});
+            const swURL = URL.createObjectURL(swBlob);
+            navigator.serviceWorker.register(swURL).then(reg => {
+                console.log('Service Worker зарегистрирован для офлайн-работы');
+            }).catch(err => console.log('SW error:', err));
+        }
+    })();
+</script>
+</body>
+</html>
